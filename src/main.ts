@@ -1,28 +1,74 @@
 import './style.css';
-import * as THREE from 'three';
+import {
+  BufferGeometry,
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  Clock,
+  BufferAttribute,
+  PointsMaterial,
+  AdditiveBlending,
+  Points,
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'lil-gui';
 
 /**
  * Base
  */
+const galaxyParams = {
+  count: 1000,
+  size: 0.02,
+};
 // Debug
 const gui = new dat.GUI();
-
+gui.add(galaxyParams, 'count').min(100).max(1000000).step(100);
+gui.add(galaxyParams, 'size').min(0.001).max(0.1).step(0.001);
 // Canvas
 const canvas = document.querySelector<HTMLCanvasElement>('canvas.webgl')!;
 
 // Scene
-const scene = new THREE.Scene();
+const scene = new Scene();
 
 /**
  * Test cube
  */
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial()
-);
-scene.add(cube);
+// const cube = new THREE.Mesh(
+//   new THREE.BoxGeometry(1, 1, 1),
+//   new THREE.MeshBasicMaterial()
+// );
+// scene.add(cube);
+
+/**
+ * Galaxy
+ */
+
+const generateGalaxy = () => {
+  const geometry = new BufferGeometry();
+  const material = new PointsMaterial({
+    size: galaxyParams.size,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+  });
+
+  const positions = new Float32Array(galaxyParams.count * 3);
+
+  for (let i = 0; i < galaxyParams.count; i++) {
+    const i3 = i * 3;
+
+    positions[i3] = (Math.random() - 0.5) * 3;
+    positions[i3 + 1] = (Math.random() - 0.5) * 3;
+    positions[i3 + 2] = (Math.random() - 0.5) * 3;
+  }
+
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+
+  const points = new Points(geometry, material);
+  scene.add(points);
+};
+
+generateGalaxy();
 
 /**
  * Sizes
@@ -50,12 +96,7 @@ window.addEventListener('resize', () => {
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
-  75,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
+const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 3;
 camera.position.y = 3;
 camera.position.z = 3;
@@ -68,7 +109,7 @@ controls.enableDamping = true;
 /**
  * Renderer
  */
-const renderer = new THREE.WebGLRenderer({
+const renderer = new WebGLRenderer({
   canvas: canvas,
 });
 renderer.setSize(sizes.width, sizes.height);
@@ -77,7 +118,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * Animate
  */
-const clock = new THREE.Clock();
+const clock = new Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
